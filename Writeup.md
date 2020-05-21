@@ -211,7 +211,8 @@ The `QuadController.cpp` and `QuadControlParams.txt` were replaced with the file
 
 
 ## Results ##
-The videos of each of the above mentioned scenarios can be found in the [videos](Videos) directory.
+The original videos of each of the above mentioned scenarios can be found in the [videos](Videos) directory.
+The gif versions of each of the above can be found in the [images](images) directory.
 
 
 
