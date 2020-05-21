@@ -189,12 +189,7 @@ Upon implementing the above code , in lines [364-372](src/QuadEstimatorEKF.cpp#L
 
 ### 5: GPS Update (scenario `11_GPSUpdate`) ###
 
-In this section we take GPS into account. I turned off the ideal estimator configuration setting (`Quad.UseIdealEstimator`) and then commented out the realistic IMU (as shown below) in the `config/11_GPSUpdate.txt` file.
-```
-#SimIMU.AccelStd = 0,0,0
-#SimIMU.GyroStd = 0,0,0
-```
-Then I implemented a simple loop construct in the `UpdateFromGPS()` (as shown below) method to implement EKF using GPS update and re-ran the simulation. Lines [330-338](src/QuadEstimatorEKF.cpp#L330) show the code for implmenting this GPS update. 
+In this section we take GPS into account. I implemented a simple loop construct in the `UpdateFromGPS()` (as shown below) method to implement EKF using GPS update and re-ran the simulation. Lines [330-338](src/QuadEstimatorEKF.cpp#L330) show the code for implmenting this GPS update. 
 ```
     for ( int i = 0; i < 6; i++) {
         zFromX(i) = ekfState(i);
@@ -216,7 +211,7 @@ The `QuadController.cpp` and `QuadControlParams.txt` were replaced with the file
 
 
 ## Results ##
-The videos of each of the above mentioned scenarios can be found in the [videos](videos) directory.
+The videos of each of the above mentioned scenarios can be found in the [videos](https://github.com/buddha216g/FCND-Estimator/tree/master/Videos) directory.
 
 
 
