@@ -3,13 +3,12 @@
 Welcome to the estimation project.  In this project, i developed the estimation portion of the controller used in the CPP simulator.  By the end of the project, my simulated quad flew with my estimator and my custom controller (from the previous project)!
 
 This README is broken down into the following sections:
- - [Simulator, Code and Config](#simulator-code-and-config)
+ - [Project Structure](#Project-Structure)
  - [The Scenarios](#the-scenarios)
  - [Results (Videos)](#results)
- - [Development Environment Setup](#development-environment-setup)
 
 
-### Project Structure ###
+## Project Structure ##
 
 For this project, you will be interacting with a few more files than before.
 
@@ -43,10 +42,6 @@ In order to make the quadcopter realistic, sensor noise had to be factored in. A
 
 Each of these csv files were loaded and the standard deviation was computed `src/Sensor_Noise.ipynb`
 
-![GPS X data Standard Deviation](imgs/STDEV%20-%20Graph%201.png)
-
-![Accelerometer X data Standard Deviation](imgs/STDEV%20-%20Graph%202.png)
-
 Then standard deviation values was then plugged into the `config/6_Sensornoise.txt`, specifically as the values for `MeasuredStdDev_GPSPosXY` and `MeasuredStdDev_AccelXY` and the simulation was run again. 
 
 It was observed that the standard deviations accurately captured the value of approximately 68% of the respective measurements as shown in the clip below.
@@ -55,16 +50,39 @@ It was observed that the standard deviations accurately captured the value of ap
 
 ### 2: Attitude Estimation (scenario `07_AttitudeEstimation`) ###
 
-Upon determining the sensor noise and calculating it standard deviation towards state estimation the next step was the improve the complementary filter-type attitude filter with a better rate gyro attitude integration scheme. 
+The next step was the improve the complementary filter-type attitude filter with a better rate gyro attitude integration scheme. 
 
 The `UpdateFromIMU()` function in the `QuadEstimatorEKF.cpp` file was modified to calculate the pitch and roll angles by defining a quaternion for the euler angles for φ, θ and ψ using state. The built in IntegrateBodyRate method of the Quaternion was used to impove the performance when predicting the pitch and roll angles.
 
 
 The code shown below to compute pitch and roll angles are in lines [106-125](src/QuadEstimatorEKF.cpp#L106) of the `QuadEstimatorEKF.cpp`:
 
-Upon implementing these code changes and running the Attitude estimation simulation again, it was observed that the estimated attitude (Euler Angles) was within 0.1 rad for each of the Euler angles for atleast 3 seconds as shown below.
+```
+float phi = rollEst;
+    float theta = pitchEst;
+    
+    Mat3x3F R = Mat3x3F();
+    R(0,0) = 1;
+    R(0,1) = sin(phi) * tan(theta);
+    R(0,2) = cos(phi) * tan(theta);
+    R(1,0) = 0;
+    R(1,1) = cos(phi);
+    R(1,2) = -sin(phi);
+    R(2,0) = 0;
+    R(2,1) = sin(phi) / cos(theta);
+    R(2,2) = cos(phi) / cos(theta);
+    V3F euler_dot = R * gyro ;
+    float predictedPitch = pitchEst + dtIMU * euler_dot.y;
+    float predictedRoll = rollEst + dtIMU * euler_dot.x;
+    ekfState(6) = ekfState(6) + dtIMU * euler_dot.z;    // yaw
+    // normalize yaw
+    if (ekfState(6) > F_PI) ekfState(6) -= 2.f*F_PI;
+    if (ekfState(6) < -F_PI) ekfState(6) += 2.f*F_PI;
+```
 
-![Attitude Estimation](images/07_AttitudeEstimation.gif)
+Upon implementing the code and running the Attitude estimation simulation again, it was observed that the estimated attitude (Euler Angles) was within 0.1 rad for each of the Euler angles for atleast 3 seconds as shown below.
+
+![Attitude Estimation](images/07_AltitudeEstimation.gif)
 
 ### 3: Prediction (scenario `08_PredictState` and scenario `09_PredictionCov`) ###
 
@@ -116,6 +134,8 @@ The follow covariance prediction was observed
 
 The predict covariance function calls the PredictState() function, which was modified to take into account accelerations and velocities. The accelerations that are input into this method (accel values) are body frame accelerations and so they needed to be converted to inertial frame values by calling the Rotate_BtoI(accel) function as shown below. Gravity of -9.8 m/s^2 was factored in as well. 
 
+This is implemented in lines [188-207](src/QuadEstimatorEKF.cpp#L188)
+
 ```
     /**
      x coordianate x= x + x_dot * dt
@@ -139,7 +159,7 @@ The predict covariance function calls the PredictState() function, which was mod
     predictedState(5) = curState(5) + acc_inertial.z * dt - CONST_GRAVITY * dt;
 ```
 
-This is implemented in lines [188-207](src/QuadEstimatorEKF.cpp#L188)
+
 
 When this code was run, it was observed that the estimator state tracked the actual state with only a reasonably slow drift as shown below. 
 
@@ -147,11 +167,11 @@ When this code was run, it was observed that the estimator state tracked the act
 
 ### 4: Magnetometer Update (scenario `10_MagUpdate`) ###
 
-Up until now, we've only used the accelerometer and gyro for our state estimation.  In this step, information from the magnetometer to improve your filter's performance in estimating the vehicle's heading is added. The parameter `QYawStd` in the `QuadEstimatorEKF.txt` file was tuned to better balance the long term drift and short-time noise from the magnetometer. The function `UpdateFromMag()` was also updated to estimate the vehicle's heading. 
+In this step, information from the magnetometer is used to improve filter's performance in estimating the vehicle's heading. The parameter `QYawStd` in the `QuadEstimatorEKF.txt` file was tuned to better balance the long term drift and short-time noise from the magnetometer. The function `UpdateFromMag()` was also updated to estimate the vehicle's heading. 
 
 Section 7.3.2 of the [Estimation for Quadrotors](https://www.overleaf.com/read/vymfngphcccj) was used to implement the magnetometer update. 
 
-Upon implementing these code changes, 
+
 ```
     zFromX(0) = ekfState(6);
     float diff = magYaw - ekfState(6);
@@ -163,13 +183,13 @@ Upon implementing these code changes,
     
     hPrime(0, 6) = 1;
 ```
-in lines [364-372](src/QuadEstimatorEKF.cpp#L364), the following was observed. 
+Upon implementing the above code , in lines [364-372](src/QuadEstimatorEKF.cpp#L364), the following was observed. 
 
-![Mag Drift](imgs/10_MagUpdate_Full.gif)
+![Mag Drift](images/10_MagUpdate.gif)
 
 ### 5: GPS Update (scenario `11_GPSUpdate`) ###
 
-Even though we have implemented an ideal estimator and and ideal IMU, the quad is seen to the drifting away smce GPS is not taken into account. As per the instructions, first I turned off the ideal estimator configuration setting (`Quad.UseIdealEstimator`) and then commented out the realistic IMU (as shown below) in the `config/11_GPSUpdate.txt` file.
+In this section we take GPS into account. I turned off the ideal estimator configuration setting (`Quad.UseIdealEstimator`) and then commented out the realistic IMU (as shown below) in the `config/11_GPSUpdate.txt` file.
 ```
 #SimIMU.AccelStd = 0,0,0
 #SimIMU.GyroStd = 0,0,0
@@ -188,14 +208,14 @@ Then I implemented a simple loop construct in the `UpdateFromGPS()` (as shown be
 
 The following was observed with an estimated position error of < 1m. for the entire simulation. 
 
-![GPS Update](images/11_GPSUpdate_Full.gif)
+![GPS Update](images/11_GPSUpdate.gif)
 
 ### 6: Update Controller ###
 
 The `QuadController.cpp` and `QuadControlParams.txt` were replaced with the files developed in the Controller project and all the scenarios were successfully run. 
 
 
-### Results ### 
+## Results ##
 The videos of each of the above mentioned scenarios can be found in the [videos](videos) directory.
 
 
