@@ -40,8 +40,20 @@ For this project, you will be interacting with a few more files than before.
 
 In order to make the quadcopter realistic, sensor noise had to be factored in. After running the simulator for the Sensor Noise scenario, the GPS X data and Accelerometer X data, which were recorded respectively as Graph 1 and Graph 2 in the log directory, was processed to determine the standard deviation. Graph 1 and Graph 2 were comma seprated value (csv) files. 
 
-Each of these csv files were loaded and the standard deviation was computed `src/Sensor_Noise.ipynb`
+Each of these csv files were loaded and the standard deviation was computed as defined in code below.
 
+```
+import numpy as np
+import os
+print(os.getcwd())
+
+gps_x = np.loadtxt('../config/06_sensor_log/Graph1.txt',delimiter=',',dtype='Float64',skiprows=1)[:,1]
+acc_x = np.loadtxt('../config/06_sensor_log/Graph2.txt',delimiter=',',dtype='Float64',skiprows=1)[:,1]
+gps_x_std = np.std(gps_x)
+print(f'GPS X Std: {gps_x_std}')
+acc_x_std = np.std(acc_x)
+print(f'Accelerometer X Std: {acc_x_std}')
+```
 Then standard deviation values was then plugged into the `config/6_Sensornoise.txt`, specifically as the values for `MeasuredStdDev_GPSPosXY` and `MeasuredStdDev_AccelXY` and the simulation was run again. 
 
 It was observed that the standard deviations accurately captured the value of approximately 68% of the respective measurements as shown in the clip below.
