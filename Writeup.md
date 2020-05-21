@@ -211,7 +211,7 @@ The `QuadController.cpp` and `QuadControlParams.txt` were replaced with the file
 
 
 ## Results ##
-The videos of each of the above mentioned scenarios can be found in the [videos](https://github.com/buddha216g/FCND-Estimator/tree/master/Videos) directory.
+The videos of each of the above mentioned scenarios can be found in the [videos](Videos) directory.
 
 
 
